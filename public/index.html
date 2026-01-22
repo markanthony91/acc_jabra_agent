@@ -59,6 +59,7 @@
             text-transform: uppercase;
         }
         .online { background: #e8f5e9; color: var(--success); }
+        .offline { background: #ffebee; color: var(--danger); }
         .battery-container {
             margin: 2rem 0;
         }
@@ -145,8 +146,18 @@
                 const state = data.state;
 
                 document.getElementById('hostname').innerText = json.hostname;
-                document.getElementById('battery-level').innerText = state.battery.level + '%';
-                document.getElementById('battery-fill').style.width = state.battery.level + '%';
+                document.getElementById('battery-level').innerText = state.connection === 'online' ? state.battery.level + '%' : '--';
+                document.getElementById('battery-fill').style.width = state.connection === 'online' ? state.battery.level + '%' : '0%';
+                
+                const badge = document.querySelector('.status-badge');
+                if (state.connection === 'online') {
+                    badge.innerText = 'Ativo';
+                    badge.className = 'status-badge online';
+                } else {
+                    badge.innerText = 'Offline';
+                    badge.className = 'status-badge offline';
+                }
+
                 document.getElementById('in-call').innerText = state.is_in_call ? 'Sim' : 'Não';
                 document.getElementById('muted').innerText = state.is_muted ? 'Mudo' : 'Ativo';
                 document.getElementById('remaining').innerText = state.battery.estimated_remaining_minutes + ' min';
