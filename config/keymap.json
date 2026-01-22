@@ -1,0 +1,30 @@
+{
+  "OffHook": {
+    "action": "socket_emit",
+    "event": "click"
+  },
+  "HookSwitch": {
+    "action": "socket_emit",
+    "event": "click"
+  },
+  "Mute": {
+    "action": "notify",
+    "title": "ACC Jabra",
+    "message": "Mute ativado"
+  },
+  "VolumeUp": {
+    "action": "none"
+  },
+  "VolumeDown": {
+    "action": "none"
+  },
+  "Redial": {
+    "action": "api_call",
+    "url": "http://localhost:18888/api/integracao/redial",
+    "method": "POST"
+  },
+  "Flash": {
+    "action": "socket_emit",
+    "event": "flash"
+  }
+}
