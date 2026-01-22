@@ -1,5 +1,5 @@
 {
-  description: "Ambiente de desenvolvimento Go para ACC Jabra Agent";
+  description: "Ambiente de desenvolvimento Go para ACC Jabra Agent com UI Nativa";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -13,15 +13,15 @@
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           go
-          gopls
-          go-tools
           pkg-config
+          webkitgtk
+          gtk3
           libusb1
         ];
 
         shellHook = ''
-          echo "ACC Jabra Agent Development Environment"
-          echo "Go: $(go version)"
+          export PKG_CONFIG_PATH="${pkgs.webkitgtk.dev}/lib/pkgconfig:${pkgs.gtk3.dev}/lib/pkgconfig"
+          echo "ACC Jabra Agent - Desktop Mode"
         '';
       };
     };

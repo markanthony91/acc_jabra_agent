@@ -3,3 +3,5 @@ module github.com/aiknow/acc_jabra_agent
 go 1.25.5
 
 require github.com/karalabe/hid v1.0.0
+
+require github.com/webview/webview_go v0.0.0-20240831120633-6173450d4dd6
