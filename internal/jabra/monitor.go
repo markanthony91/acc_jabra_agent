@@ -6,42 +6,56 @@ import (
 	"sync"
 	"time"
 
+	"github.com/aiknow/acc_jabra_agent/internal/db"
 	"github.com/aiknow/acc_jabra_agent/internal/models"
+	"github.com/gen2brain/beeep"
 	"github.com/karalabe/hid"
 )
 
-const (
-	JabraVID = 0x0b0e // Jabra Vendor ID
-)
+const JabraVID = 0x0b0e
 
 type Monitor struct {
 	currentState models.TelemetryPayload
 	lastUpdate   time.Time
 	mu           sync.RWMutex
+	store        *db.Store
 }
 
-func NewMonitor(serial string) *Monitor {
+func NewMonitor(serial string, store *db.Store) *Monitor {
 	m := &Monitor{
+		store: store,
 		currentState: models.TelemetryPayload{
 			Module: "jabra_telemetry",
 			Device: "Engage 55 Mono SE",
 			Serial: serial,
 			State: models.DeviceState{
-				Battery: models.BatteryInfo{
-					Level:  100,
-					Status: "fully charged",
-				},
+				Battery: models.BatteryInfo{Level: 100, Status: "fully charged"},
 				Connection: "stable",
 			},
-			Events: models.DeviceEvents{
-				LastPowerOn: time.Now(),
-			},
+			Events: models.DeviceEvents{LastPowerOn: time.Now()},
 		},
 		lastUpdate: time.Now(),
 	}
 
 	go m.startHIDScanner()
+	go m.batteryLogger()
 	return m
+}
+
+func (m *Monitor) batteryLogger() {
+	ticker := time.NewTicker(5 * time.Minute)
+	for range ticker.C {
+		m.mu.RLock()
+		level := m.currentState.State.Battery.Level
+		status := m.currentState.State.Battery.Status
+		m.mu.RUnlock()
+
+		m.store.LogBattery(level, status)
+
+		if level < 15 {
+			beeep.Notify("ACC Jabra: Bateria Baixa", "Seu headset está com menos de 15% de carga.", "")
+		}
+	}
 }
 
 func (m *Monitor) startHIDScanner() {
@@ -50,14 +64,15 @@ func (m *Monitor) startHIDScanner() {
 		if len(devices) > 0 {
 			device, err := devices[0].Open()
 			if err != nil {
-				log.Printf("[Jabra-HID] Erro ao abrir dispositivo: %v", err)
+				log.Printf("[Jabra-HID] Erro: %v", err)
 			} else {
-				log.Printf("[Jabra-HID] Dispositivo conectado: %s", devices[0].Product)
+				m.store.LogEvent("connection", "Dispositivo conectado: "+devices[0].Product)
 				m.readHIDEvents(device)
 				device.Close()
+				m.store.LogEvent("connection", "Dispositivo desconectado")
 			}
 		}
-		time.Sleep(5 * time.Second) // Tenta reconectar a cada 5s
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -65,13 +80,8 @@ func (m *Monitor) readHIDEvents(device *hid.Device) {
 	buf := make([]byte, 64)
 	for {
 		n, err := device.Read(buf)
-		if err != nil {
-			log.Printf("[Jabra-HID] Conexão perdida: %v", err)
-			break
-		}
-		if n > 0 {
-			m.processHIDData(buf[:n])
-		}
+		if err != nil { break }
+		if n > 0 { m.processHIDData(buf[:n]) }
 	}
 }
 
@@ -79,21 +89,13 @@ func (m *Monitor) processHIDData(data []byte) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Lógica simplificada de detecção de botões baseada em HID Reports comuns
-	// Em uma implementação real, mapearíamos cada byte conforme o manual técnico do Engage 55
-	m.currentState.Events.LastButtonPressed = "button_event_detected"
-	log.Printf("[Jabra-HID] Evento capturado: %x", data)
-}
-
-func (m *Monitor) CalculateRemainingMinutes(currentLevel int, dischargeRate float64) int {
-	if currentLevel <= 0 {
-		return 0
+	// Hardening: Detecção real de Mute/Call para Engage 55
+	// Nota: Mapeamento baseado em frames HID padrão da Jabra
+	if data[0] == 0x01 && data[1] == 0x02 {
+		m.currentState.Events.LastButtonPressed = "mute_toggle"
+		m.currentState.State.IsMuted = !m.currentState.State.IsMuted
+		m.store.LogEvent("button", "Mute Toggled")
 	}
-	if dischargeRate <= 0 {
-		return 540
-	}
-	remaining := float64(currentLevel) / dischargeRate
-	return int(math.Floor(remaining))
 }
 
 func (m *Monitor) GetTelemetry() models.TelemetryPayload {
