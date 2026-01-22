@@ -46,9 +46,45 @@ func (s *Store) initSchema() error {
 		event_type TEXT,
 		description TEXT,
 		timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+	CREATE TABLE IF NOT EXISTS settings (
+		key TEXT PRIMARY KEY,
+		value TEXT
 	);`
 	_, err := s.db.Exec(query)
 	return err
+}
+
+func (s *Store) GetSetting(key, defaultValue string) string {
+	var value string
+	err := s.db.QueryRow("SELECT value FROM settings WHERE key = ?", key).Scan(&value)
+	if err != nil {
+		return defaultValue
+	}
+	return value
+}
+
+func (s *Store) SaveSetting(key, value string) error {
+	_, err := s.db.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
+	return err
+}
+
+func (s *Store) GetLogs(limit int) ([]map[string]interface{}, error) {
+	rows, err := s.db.Query("SELECT event_type, description, timestamp FROM hardware_events ORDER BY timestamp DESC LIMIT ?", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []map[string]interface{}
+	for rows.Next() {
+		var etype, desc, ts string
+		rows.Scan(&etype, &desc, &ts)
+		logs = append(logs, map[string]interface{}{
+			"type": etype, "description": desc, "timestamp": ts,
+		})
+	}
+	return logs, nil
 }
 
 func (s *Store) LogBattery(level int, status string) {

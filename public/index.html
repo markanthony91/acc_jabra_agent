@@ -8,12 +8,13 @@
     <style>
         :root {
             --primary: #2196F3;
-            --bg: #f5f5f5;
+            --bg: #f8f9fa;
             --card: #ffffff;
-            --text: #333333;
+            --text: #2c3e50;
             --success: #4CAF50;
             --warning: #FFC107;
             --danger: #F44336;
+            --muted: #95a5a6;
         }
         body {
             font-family: 'Roboto', sans-serif;
@@ -23,121 +24,313 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            overflow: hidden;
         }
         .card {
             background: var(--card);
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 350px;
+            padding: 1.2rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            width: 320px;
             text-align: center;
         }
+
+        /* MINI VIEW STYLES */
+        .mini-view .header { margin-bottom: 1rem; }
+        .mini-view .battery-section { margin: 1rem 0; padding: 0.8rem; }
+        .mini-view .chart-container { display: none; }
+        .mini-view .indicators { margin-bottom: 0.8rem; }
+        .mini-view .footer-info { border: none; padding: 0; }
+        
+        /* FULL VIEW STYLES */
+        .full-view .card { width: 380px; }
+        .full-view .chart-container { height: 100px; margin-top: 10px; display: block; }
+
+        /* TABS */
+        .tabs { display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+        .full-view .tabs { display: flex; justify-content: space-around; }
+        .tab-btn { background: none; border: none; font-size: 0.7rem; font-weight: 700; color: var(--muted); cursor: pointer; padding: 5px 10px; }
+        .tab-btn.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .tab-content { display: none; text-align: left; margin-top: 10px; font-size: 0.8rem; max-height: 250px; overflow-y: auto; }
+        .tab-content.active { display: block; }
+
+        /* CONFIG FORM */
+        .config-group { margin-bottom: 10px; }
+        .config-group label { display: block; font-size: 0.7rem; color: var(--muted); margin-bottom: 2px; }
+        .config-group input { width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.8rem; box-sizing: border-box; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 700; margin-top: 5px; }
+
+        /* LOGS TABLE */
+        .logs-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
+        .logs-table th { text-align: left; color: var(--muted); padding: 5px; border-bottom: 1px solid #eee; }
+        .logs-table td { padding: 5px; border-bottom: 1px solid #fafafa; }
+        .log-type { font-weight: 700; text-transform: uppercase; }
+
         .header {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+        }
+        .profile {
+            display: flex;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 1.5rem;
+            text-align: left;
         }
         .logo {
             width: 40px;
             height: 40px;
             background: var(--primary);
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
+            font-weight: 700;
+            font-size: 1.1rem;
         }
         .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
         }
         .online { background: #e8f5e9; color: var(--success); }
         .offline { background: #ffebee; color: var(--danger); }
-        .battery-container {
-            margin: 2rem 0;
+        
+        .battery-section {
+            background: #fcfcfc;
+            border-radius: 15px;
+            border: 1px solid #f0f0f0;
         }
         .battery-level {
-            font-size: 3rem;
-            font-weight: 700;
+            font-size: 2.4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .battery-meta {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 4px;
         }
         .battery-bar {
             width: 100%;
-            height: 8px;
+            height: 5px;
             background: #eee;
-            border-radius: 4px;
+            border-radius: 3px;
             margin-top: 10px;
             overflow: hidden;
         }
         .battery-fill {
             height: 100%;
             background: var(--success);
-            transition: width 0.5s ease;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .info-grid {
+
+        .indicators {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            text-align: left;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
+            gap: 8px;
         }
-        .info-item label {
+        .indicator-box {
+            padding: 8px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            font-size: 0.75rem;
+        }
+        .indicator-box label {
             display: block;
-            color: #888;
+            color: var(--muted);
             margin-bottom: 2px;
-        }
-        .info-item span {
+            font-size: 0.6rem;
             font-weight: 500;
         }
+        .indicator-box span { font-weight: 700; }
+        .active-call { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+        .active-mute { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+        .footer-info {
+            font-size: 0.7rem;
+            color: var(--muted);
+            margin-top: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        #clock { font-weight: 700; color: var(--text); }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="mini-view">
     <div class="card">
         <div class="header">
-            <div id="app-logo" class="logo">AJ</div>
-            <div style="text-align: left">
-                <div id="custom-id" style="font-weight: 700">Aguardando...</div>
-                <div id="hostname" style="font-size: 0.7rem; color: #888">Buscando...</div>
+            <div class="profile">
+                <div id="app-logo" class="logo">AJ</div>
+                <div>
+                    <div id="custom-id" style="font-weight: 700; font-size: 0.85rem">Buscando...</div>
+                    <div id="device-name" style="font-size: 0.65rem; color: var(--muted)">Dongle / Headset</div>
+                </div>
             </div>
             <div class="status-badge online">Ativo</div>
         </div>
 
-        <div class="battery-container">
-            <div id="battery-level" class="battery-level">0%</div>
-            <div style="font-size: 0.9rem; color: #888">Carga da Bateria</div>
+        <div class="battery-section">
+            <div id="battery-level" class="battery-level">--%</div>
+            <div class="battery-meta" id="remaining">Estimando tempo...</div>
             <div class="battery-bar">
                 <div id="battery-fill" class="battery-fill" style="width: 0%"></div>
             </div>
         </div>
 
-        <div class="info-grid">
-            <div class="info-item">
-                <label>Em Chamada</label>
-                <span id="in-call">Não</span>
+        <div class="indicators">
+            <div id="call-box" class="indicator-box">
+                <label>STATUS</label>
+                <span id="in-call">LIVRE</span>
             </div>
-            <div class="info-item">
-                <label>Microfone</label>
-                <span id="muted">Ativo</span>
+            <div id="uptime-box" class="indicator-box">
+                <label>EM USO</label>
+                <span id="uptime">00:00</span>
             </div>
-            <div class="info-item">
-                <label>Tempo Restante</label>
-                <span id="remaining">-- min</span>
+        </div>
+
+        <div id="full-view-only" style="display: none;">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('telemetry')">TELEMETRIA</button>
+                <button class="tab-btn" onclick="showTab('config'); loadConfig()">CONFIGS</button>
+                <button class="tab-btn" onclick="showTab('logs'); loadLogs()">LOGS</button>
             </div>
-            <div class="info-item">
-                <label>Conexão</label>
-                <span id="connection">Estável</span>
+
+            <div id="tab-telemetry" class="tab-content active">
+                <div style="font-size: 0.7rem; color: var(--muted); text-align: left; font-weight: 700; margin-bottom: 5px; margin-top: 10px">HISTÓRICO</div>
+                <div class="chart-container">
+                    <canvas id="batteryChart"></canvas>
+                </div>
             </div>
+
+            <div id="tab-config" class="tab-content">
+                <div class="config-group">
+                    <label>NOME DO OPERADOR</label>
+                    <input type="text" id="cfg-operator" placeholder="Ex: Marcelo">
+                </div>
+                <div class="config-group">
+                    <label>COR DE IDENTIFICAÇÃO (HEX)</label>
+                    <input type="text" id="cfg-color" placeholder="#2196F3">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                   <div style="display: flex; align-items: center; gap: 5px">
+                       <input type="checkbox" id="cfg-autostart" style="width: auto">
+                       <label style="margin: 0">AUTOSTART</label>
+                   </div>
+                </div>
+                <button class="btn-save" onclick="saveConfig()">SALVAR ALTERAÇÕES</button>
+            </div>
+
+            <div id="tab-logs" class="tab-content">
+                <table class="logs-table">
+                    <thead>
+                        <tr><th>TIPO</th><th>DESCRIÇÃO</th><th>HORA</th></tr>
+                    </thead>
+                    <tbody id="logs-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer-info">
+            <span id="clock">00:00:00</span>
+            <span id="hostname">host...</span>
         </div>
     </div>
 
     <script>
+        let batteryChart;
+        const urlParams = new URLSearchParams(window.location.search);
+        const isMini = urlParams.get('view') !== 'full';
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadConfig() {
+            const resp = await fetch('/api/config');
+            const cfg = await resp.json();
+            document.getElementById('cfg-operator').value = cfg.operator_name;
+            document.getElementById('cfg-color').value = cfg.custom_color;
+            document.getElementById('cfg-autostart').checked = cfg.autostart === 'true';
+        }
+
+        async function saveConfig() {
+            const cfg = {
+                operator_name: document.getElementById('cfg-operator').value,
+                custom_color: document.getElementById('cfg-color').value,
+                autostart: document.getElementById('cfg-autostart').checked.toString()
+            };
+            await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cfg)
+            });
+            alert('Configurações salvas!');
+            updateTelemetry();
+        }
+
+        async function loadLogs() {
+            const resp = await fetch('/api/logs');
+            const logs = await resp.json();
+            const body = document.getElementById('logs-body');
+            body.innerHTML = logs.map(l => `
+                <tr>
+                    <td class="log-type">${l.type}</td>
+                    <td>${l.description}</td>
+                    <td>${l.timestamp.split(' ')[1]}</td>
+                </tr>
+            `).join('');
+        }
+
+        if (!isMini) {
+            document.body.className = 'full-view';
+            document.getElementById('full-view-only').style.display = 'block';
+            initChart();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('pt-BR');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function initChart() {
+            const ctx = document.getElementById('batteryChart').getContext('2d');
+            batteryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Bateria',
+                        data: [],
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { min: 0, max: 100, display: false }
+                    }
+                }
+            });
+        }
+
         async function updateTelemetry() {
             try {
                 const response = await fetch('/api/telemetry');
@@ -145,36 +338,176 @@
                 const data = json.data;
                 const state = data.state;
 
-                document.getElementById('hostname').innerText = json.hostname;
+                document.getElementById('hostname').innerText = json.hostname.toLowerCase();
                 document.getElementById('custom-id').innerText = state.custom_id;
+                document.getElementById('device-name').innerText = data.device;
                 document.getElementById('app-logo').style.background = state.custom_color;
-                document.getElementById('battery-level').innerText = state.connection === 'online' ? state.battery.level + '%' : '--';
-                document.getElementById('battery-fill').style.width = state.connection === 'online' ? state.battery.level + '%' : '0%';
-                document.getElementById('remaining').innerText = state.connection === 'online' ? state.battery.estimated_remaining_minutes + ' min' : '--';
-                document.getElementById('connection').innerText = state.session_uptime; // Usando campo conexão para mostrar uptime
+                
+                const isOnline = state.connection === 'online';
+                document.getElementById('battery-level').innerText = isOnline ? state.battery.level + '%' : '--%';
+                document.getElementById('battery-fill').style.width = isOnline ? state.battery.level + '%' : '0%';
+                document.getElementById('remaining').innerText = isOnline ? state.battery.estimated_remaining_minutes + ' min' : 'Off';
+                document.getElementById('uptime').innerText = state.session_uptime;
+                
+                const callBox = document.getElementById('call-box');
+                const inCall = document.getElementById('in-call');
+                if (state.is_in_call) {
+                    callBox.className = 'indicator-box active-call';
+                    inCall.innerText = 'EM CURSO';
+                } else if (state.is_muted) {
+                    callBox.className = 'indicator-box active-mute';
+                    inCall.innerText = 'MUTADO';
+                } else {
+                    callBox.className = 'indicator-box';
+                    inCall.innerText = isOnline ? 'LIVRE' : 'OFFLINE';
+                }
                 
                 const badge = document.querySelector('.status-badge');
-                if (state.connection === 'online') {
-                    badge.innerText = 'Ativo';
+                badge.innerText = isOnline ? 'Online' : 'Offline';
+                badge.className = 'status-badge ' + (isOnline ? 'online' : 'offline');
+
+                const fill = document.getElementById('battery-fill');
+                if (state.battery.level < 20) fill.style.background = 'var(--danger)';
+                else if (state.battery.level < 50) fill.style.background = 'var(--warning)';
+                else fill.style.background = 'var(--success)';
+
+            } catch (err) { console.error('Telemetria Erro:', err); }
+        }
+
+        async function updateHistory() {
+            if (isMini || !batteryChart) return;
+            try {
+                const response = await fetch('/api/history/battery');
+                const history = await response.json();
+                if (history) {
+                    const reversed = history.slice().reverse();
+                    batteryChart.data.labels = reversed.map(h => h.timestamp);
+                    batteryChart.data.datasets[0].data = reversed.map(h => h.level);
+                    batteryChart.update('none');
+                }
+            } catch (err) { console.error('Histórico Erro:', err); }
+        }
+
+        setInterval(updateTelemetry, 1000);
+        if (!isMini) setInterval(updateHistory, 10000);
+        updateTelemetry();
+        updateHistory();
+    </script>
+</body>
+
+    <script>
+        let batteryChart;
+        
+        function initChart() {
+            const ctx = document.getElementById('batteryChart').getContext('2d');
+            batteryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Bateria',
+                        data: [],
+                        borderColor: '#2196F3',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { min: 0, max: 100, display: false }
+                    }
+                }
+            });
+        }
+
+        async function updateTelemetry() {
+            try {
+                const response = await fetch('/api/telemetry');
+                const json = await response.json();
+                const data = json.data;
+                const state = data.state;
+
+                document.getElementById('hostname').innerText = json.hostname.toLowerCase();
+                document.getElementById('custom-id').innerText = state.custom_id;
+                document.getElementById('device-name').innerText = data.device;
+                document.getElementById('app-logo').style.background = state.custom_color;
+                document.getElementById('app-logo').style.boxShadow = `0 4px 10px ${state.custom_color}4d`;
+                
+                const isOnline = state.connection === 'online';
+                document.getElementById('battery-level').innerText = isOnline ? state.battery.level + '%' : '--%';
+                document.getElementById('battery-fill').style.width = isOnline ? state.battery.level + '%' : '0%';
+                document.getElementById('remaining').innerText = isOnline ? state.battery.estimated_remaining_minutes + ' min restantes' : 'Desconectado';
+                document.getElementById('uptime').innerText = 'up: ' + state.session_uptime;
+                
+                // Call status
+                const callBox = document.getElementById('call-box');
+                const inCall = document.getElementById('in-call');
+                if (state.is_in_call) {
+                    callBox.className = 'indicator-box active-call';
+                    inCall.innerText = 'EM CURSO';
+                } else {
+                    callBox.className = 'indicator-box';
+                    inCall.innerText = isOnline ? 'LIVRE' : 'OFFLINE';
+                }
+
+                // Mute status
+                const muteBox = document.getElementById('mute-box');
+                const mutedText = document.getElementById('muted');
+                if (state.is_muted) {
+                    muteBox.className = 'indicator-box active-mute';
+                    mutedText.innerText = 'MUTADO';
+                } else {
+                    muteBox.className = 'indicator-box';
+                    mutedText.innerText = isOnline ? 'ATIVO' : 'OFFLINE';
+                }
+                
+                const badge = document.querySelector('.status-badge');
+                if (isOnline) {
+                    badge.innerText = 'Online';
                     badge.className = 'status-badge online';
                 } else {
                     badge.innerText = 'Offline';
                     badge.className = 'status-badge offline';
                 }
 
-                // Cores dinâmicas
+                // Color based on level
                 const fill = document.getElementById('battery-fill');
-                if (state.battery.level < 20) fill.style.background = '#F44336';
-                else if (state.battery.level < 50) fill.style.background = '#FFC107';
-                else fill.style.background = '#4CAF50';
+                if (state.battery.level < 20) fill.style.background = 'var(--danger)';
+                else if (state.battery.level < 50) fill.style.background = 'var(--warning)';
+                else fill.style.background = 'var(--success)';
 
             } catch (err) {
                 console.error('Erro ao buscar telemetria:', err);
             }
         }
 
-        setInterval(updateTelemetry, 2000);
+        async function updateHistory() {
+            try {
+                const response = await fetch('/api/history/battery');
+                const history = await response.json();
+                
+                if (batteryChart && history) {
+                    const reversed = history.slice().reverse();
+                    batteryChart.data.labels = reversed.map(h => h.timestamp);
+                    batteryChart.data.datasets[0].data = reversed.map(h => h.level);
+                    batteryChart.update('none');
+                }
+            } catch (err) {
+                console.error('Erro ao buscar histórico:', err);
+            }
+        }
+
+        initChart();
+        setInterval(updateTelemetry, 1000);
+        setInterval(updateHistory, 10000);
         updateTelemetry();
+        updateHistory();
     </script>
 </body>
 </html>

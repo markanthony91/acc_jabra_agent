@@ -3,7 +3,6 @@ package jabra
 import (
 	"fmt"
 	"log"
-	"math"
 	"sync"
 	"time"
 
@@ -71,9 +70,11 @@ func (m *Monitor) setConnectionStatus(status string, deviceName string, serial s
 			m.currentState.Device = deviceName
 			m.currentState.Serial = serial
 			m.currentState.Events.LastPowerOn = time.Now()
-			// Simulação de busca de identidade
-			m.currentState.State.CustomID = "Operador 01"
-			m.currentState.State.CustomColor = "#2196F3"
+			
+			// Carrega identidade das configurações
+			m.currentState.State.CustomID = m.store.GetSetting("operator_name", "Operador 01")
+			m.currentState.State.CustomColor = m.store.GetSetting("custom_color", "#2196F3")
+			
 			beeep.Notify("ACC Jabra", "Headset Conectado: "+deviceName, "")
 		} else {
 			m.currentState.State.SessionUptime = "00h 00m"
@@ -91,11 +92,14 @@ func (m *Monitor) startHIDScanner() {
 		if len(devices) > 0 {
 			info := devices[0]
 			serial := info.Serial
-			if serial == "" { serial = "USB-HID-DEVICE" }
+			if serial == "" {
+				serial = "USB-HID-DEVICE"
+			}
 
 			device, err := info.Open()
 			if err != nil {
 				log.Printf("[Jabra-HID] Erro: %v", err)
+				m.runSimulation()
 			} else {
 				m.setConnectionStatus("online", info.Product, serial)
 				m.readHIDEvents(device)
@@ -103,18 +107,56 @@ func (m *Monitor) startHIDScanner() {
 				m.setConnectionStatus("offline", "", "")
 			}
 		} else {
-			m.setConnectionStatus("offline", "", "")
+			// Se não houver hardware, rodamos em modo simulação para desenvolvimento
+			m.runSimulation()
 		}
 		time.Sleep(2 * time.Second)
 	}
+}
+
+func (m *Monitor) runSimulation() {
+	m.mu.Lock()
+	if m.currentState.State.Connection == "online" {
+		m.mu.Unlock()
+		return
+	}
+	m.mu.Unlock()
+
+	m.setConnectionStatus("online", "Jabra Simulation Mode", "SIM-123456")
+	
+	// Simular variação de bateria
+	go func() {
+		level := 100
+		for {
+			m.mu.Lock()
+			if m.currentState.Serial != "SIM-123456" {
+				m.mu.Unlock()
+				return
+			}
+			m.currentState.State.Battery.Level = level
+			m.currentState.State.Battery.Status = "discharging"
+			m.currentState.State.Battery.EstimatedRemainingMinutes = m.CalculateRemainingMinutes(level, 0.1)
+			m.mu.Unlock()
+
+			level -= 1
+			if level < 0 {
+				level = 100
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}()
 }
 
 func (m *Monitor) readHIDEvents(device *hid.Device) {
 	buf := make([]byte, 64)
 	for {
 		n, err := device.Read(buf)
-		if err != nil { break }
-		if n > 0 { m.processHIDData(buf[:n]) }
+		if err != nil {
+			break
+		}
+		if n > 0 {
+			m.processHIDData(buf[:n])
+		}
 	}
 }
 
@@ -122,10 +164,23 @@ func (m *Monitor) processHIDData(data []byte) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// Log para debug de pacotes novos
+	log.Printf("[Jabra-HID] Packet: %v", data)
+
+	// Mute Toggle (Padrão observado em alguns headsets)
 	if data[0] == 0x01 && data[1] == 0x02 {
 		m.currentState.Events.LastButtonPressed = "mute_toggle"
 		m.currentState.State.IsMuted = !m.currentState.State.IsMuted
 		m.store.LogEvent("button", "Mute Toggled")
+		return
+	}
+
+	// Hook Switch (Call answer/end)
+	if data[0] == 0x01 && (data[1] == 0x04 || data[1] == 0x08) {
+		m.currentState.Events.LastButtonPressed = "hook_switch"
+		m.currentState.State.IsInCall = !m.currentState.State.IsInCall
+		m.store.LogEvent("button", "Hook Switch Toggled")
+		return
 	}
 }
 

@@ -13,6 +13,7 @@
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           go
+          nodejs_20
           pkg-config
           webkitgtk_4_1 # Versão moderna estável
           gtk3
@@ -20,10 +21,12 @@
         ];
 
         shellHook = ''
-          # Força o pkg-config a encontrar o webkitgtk mesmo se o nome do pacote variar
-          export PKG_CONFIG_PATH="${pkgs.webkitgtk_4_1.dev}/lib/pkgconfig:${pkgs.gtk3.dev}/lib/pkgconfig"
-          # Mock para webkit2gtk-4.0 se necessário (webview_go pode pedir 4.0 ou 4.1)
-          ln -sf ${pkgs.webkitgtk_4_1.dev}/lib/pkgconfig/webkit2gtk-4.1.pc ${pkgs.webkitgtk_4_1.dev}/lib/pkgconfig/webkit2gtk-4.0.pc || true
+          # Cria um diretório temporário para links do pkg-config
+          mkdir -p .pkgconfig
+          cp ${pkgs.webkitgtk_4_1.dev}/lib/pkgconfig/webkit2gtk-4.1.pc .pkgconfig/webkit2gtk-4.0.pc
+          # Ajusta o nome dentro do arquivo .pc se necessário (geralmente não é, o nome do arquivo é o que importa para o pkg-config)
+          
+          export PKG_CONFIG_PATH="$(pwd)/.pkgconfig:$PKG_CONFIG_PATH"
           echo "ACC Jabra Agent - Desktop Mode"
         '';
       };

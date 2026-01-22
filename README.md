@@ -1,62 +1,66 @@
 # ACC Jabra Telemetry Agent
 
-Agente de telemetria de hardware escrito em **Go** para monitoramento avançado de headsets **Jabra Engage 55 Mono SE**. Parte integrante do ecossistema Aiknow Command Center (ACC).
+Agente de telemetria de hardware escrito em **Go** para monitoramento avançado de headsets Jabra. Parte integrante do ecossistema Aiknow Command Center (ACC), focado em fornecer telemetria em tempo real para operadores de contact center.
 
-## 🚀 Funcionalidades
+## 🚀 Funcionalidades Principais
 
-- **Monitoramento em Tempo Real:** Status de chamada, mudo e volume.
-- **Session Tracking:** Cronômetro de Uptime (tempo logado) por sessão.
-- **Identidade Visual:** Suporte a Custom ID (Operador) e Cor de identificação.
-- **Telemetria de Bateria:** Nível atual e status de carregamento.
-- **Predictive Analytics:** Cálculo estimado de minutos restantes de conversação.
-- **Event Tracking:** Captura de eventos de botões físicos via USB HID.
-- **API REST:** Endpoint JSON para integração com ACC Core e Dashboards.
+- **Interface Dual Adaptativa:**
+    - **Mini View (App):** Janela compacta e nativa focada no essencial (Status, Uptime, Bateria e Relógio).
+    - **Full View (Dashboard):** Acessível via navegador, com gráficos de histórico, gestão de logs e configurações.
+- **System Tray (Bandeja):** Roda silenciosamente em segundo plano com ícone na bandeja para controle rápido.
+- **Autostart Inteligente:** Configuração automática para iniciar com o sistema Linux.
+- **Gestão de Identidade:** Nome do operador e cor de identificação persistentes e configuráveis.
+- **Monitoramento HID Real:** Captura eventos de botões físicos (Mute, Hook Switch) e detecta conexão/desconexão.
+- **Modo de Simulação:** Ativa-se automaticamente na ausência de hardware para facilitar testes de desenvolvimento.
+- **Persistência SQLite:** Armazenamento local de configurações, histórico de bateria e logs de hardware.
 
-## 🛠 Tecnologia
+## 🛠 Stack Técnica
 
-- **Linguagem:** Go 1.22+
-- **Integração:** USB HID (Vendor ID: `0b0e`)
-- **Ambiente:** Nix Flakes para desenvolvimento reprodutível
-- **Arquitetura:** Concorrência via Goroutines para scanner USB não bloqueante.
+- **Linguagem:** Go (Golang)
+- **UI Nativa:** `webview_go` (WebKitGTK)
+- **USB HID:** `karalabe/hid`
+- **Banco de Dados:** SQLite (`modernc.org/sqlite` - Zero Cgo)
+- **Notificações:** `gen2brain/beeep`
+- **Frontend:** HTML5, CSS3 moderno e Chart.js (via CDN)
 
-## 📦 Instalação e Uso
+## 📦 Instalação e Desenvolvimento
 
-### Requisitos
-- Linux (Ubuntu/Fedora) ou WSL2
-- Nix (recomendado) ou Go instalado
-
-### Executando com Nix
+### Ambiente Nix (Recomendado)
+O projeto utiliza Nix Flakes para garantir que todas as dependências nativas (GTK3, WebKitGTK, LibUSB) estejam presentes.
 ```bash
 nix develop
-go mod tidy
+```
+
+### Comandos Úteis
+```bash
+# Executar em modo desenvolvimento
 go run cmd/agent/main.go
+
+# Executar testes de Backend
+go test ./internal/...
+
+# Executar testes de Frontend (requer Node.js)
+npm install && npm test
+
+# Compilar binário final
+go build -o jabra-agent ./cmd/agent/main.go
 ```
 
-### Endpoints da API
-- `GET /api/telemetry`: Retorna o estado completo do dispositivo e telemetria.
-- `GET /api/health`: Health check do agente.
+## 🔌 API REST (Porta 18888)
 
-## 📊 Estrutura de Resposta
-```json
-{
-  "hostname": "workstation-01",
-  "data": {
-    "module": "jabra_telemetry",
-    "device": "Engage 55 Mono SE",
-    "serial": "ABC123456789",
-    "state": {
-      "is_in_call": false,
-      "is_muted": false,
-      "volume": 75,
-      "battery": {
-        "level": 82,
-        "status": "discharging",
-        "estimated_remaining_minutes": 540
-      }
-    }
-  }
-}
-```
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `GET` | `/api/telemetry` | Estado atual do dispositivo e operador. |
+| `GET` | `/api/history/battery` | Últimos 50 registros de carga da bateria. |
+| `GET` | `/api/logs` | Histórico de eventos de hardware (Mute, Botões, etc). |
+| `GET` | `/api/config` | Obtém configurações persistentes. |
+| `POST` | `/api/config` | Atualiza configurações (Nome, Cor, Autostart). |
+
+## 🧪 Qualidade
+
+O projeto mantém uma cobertura de testes rigorosa:
+- **Backend:** Testes unitários para lógica de monitoramento e endpoints de API.
+- **Frontend:** Testes de UI via JSDOM para validar a alternância entre Mini e Full view.
 
 ---
-*Desenvolvido para Aiknow Systems - Marcelo.*
+*Desenvolvido para Marcelo - Aiknow Systems - 2026*

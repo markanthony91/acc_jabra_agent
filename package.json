@@ -1,0 +1,11 @@
+{
+  "name": "acc-jabra-agent-ui",
+  "version": "1.1.0",
+  "description": "Frontend tests for ACC Jabra Agent",
+  "scripts": {
+    "test": "node --test public/*.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
+}
