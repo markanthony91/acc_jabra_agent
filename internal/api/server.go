@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/aiknow/acc_jabra_agent/internal/jabra"
 )
@@ -17,8 +18,14 @@ func NewServer(m *jabra.Monitor) *Server {
 }
 
 func (s *Server) Start(port string) error {
+	// API Handlers
 	http.HandleFunc("/api/telemetry", s.handleTelemetry)
 	http.HandleFunc("/api/health", s.handleHealth)
+
+	// Static Files Handler (Dashboard)
+	// Servindo a pasta /public na raiz /
+	fs := http.FileServer(http.Dir("./public"))
+	http.Handle("/", fs)
 
 	return http.ListenAndServe(":"+port, nil)
 }
@@ -27,7 +34,6 @@ func (s *Server) handleTelemetry(w http.ResponseWriter, r *http.Request) {
 	data := s.monitor.GetTelemetry()
 	
 	w.Header().Set("Content-Type", "application/json")
-	// Padrão do Workspace: Hostname em todas as respostas
 	hostname, _ := os.Hostname()
 	
 	response := struct {

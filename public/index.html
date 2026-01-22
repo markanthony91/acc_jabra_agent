@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACC Jabra Dash</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2196F3;
+            --bg: #f5f5f5;
+            --card: #ffffff;
+            --text: #333333;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .online { background: #e8f5e9; color: var(--success); }
+        .battery-container {
+            margin: 2rem 0;
+        }
+        .battery-level {
+            font-size: 3rem;
+            font-weight: 700;
+        }
+        .battery-bar {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .battery-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.5s ease;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            text-align: left;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .info-item label {
+            display: block;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        .info-item span {
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="header">
+            <div class="logo">AJ</div>
+            <div style="text-align: left">
+                <div style="font-weight: 700">Jabra Engage 55</div>
+                <div id="hostname" style="font-size: 0.7rem; color: #888">Buscando...</div>
+            </div>
+            <div class="status-badge online">Ativo</div>
+        </div>
+
+        <div class="battery-container">
+            <div id="battery-level" class="battery-level">0%</div>
+            <div style="font-size: 0.9rem; color: #888">Carga da Bateria</div>
+            <div class="battery-bar">
+                <div id="battery-fill" class="battery-fill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Em Chamada</label>
+                <span id="in-call">Não</span>
+            </div>
+            <div class="info-item">
+                <label>Microfone</label>
+                <span id="muted">Ativo</span>
+            </div>
+            <div class="info-item">
+                <label>Tempo Restante</label>
+                <span id="remaining">-- min</span>
+            </div>
+            <div class="info-item">
+                <label>Conexão</label>
+                <span id="connection">Estável</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function updateTelemetry() {
+            try {
+                const response = await fetch('/api/telemetry');
+                const json = await response.json();
+                const data = json.data;
+                const state = data.state;
+
+                document.getElementById('hostname').innerText = json.hostname;
+                document.getElementById('battery-level').innerText = state.battery.level + '%';
+                document.getElementById('battery-fill').style.width = state.battery.level + '%';
+                document.getElementById('in-call').innerText = state.is_in_call ? 'Sim' : 'Não';
+                document.getElementById('muted').innerText = state.is_muted ? 'Mudo' : 'Ativo';
+                document.getElementById('remaining').innerText = state.battery.estimated_remaining_minutes + ' min';
+                document.getElementById('connection').innerText = state.connection;
+
+                // Cores dinâmicas
+                const fill = document.getElementById('battery-fill');
+                if (state.battery.level < 20) fill.style.background = '#F44336';
+                else if (state.battery.level < 50) fill.style.background = '#FFC107';
+                else fill.style.background = '#4CAF50';
+
+            } catch (err) {
+                console.error('Erro ao buscar telemetria:', err);
+            }
+        }
+
+        setInterval(updateTelemetry, 2000);
+        updateTelemetry();
+    </script>
+</body>
+</html>
