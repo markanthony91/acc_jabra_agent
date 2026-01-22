@@ -1,6 +1,7 @@
 package jabra
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"sync"
@@ -29,8 +30,11 @@ func NewMonitor(serial string, store *db.Store) *Monitor {
 			Device: "Engage 55 Mono SE",
 			Serial: serial,
 			State: models.DeviceState{
-				Battery:    models.BatteryInfo{Level: 0, Status: "unknown"},
-				Connection: "offline",
+				Battery:       models.BatteryInfo{Level: 0, Status: "unknown"},
+				Connection:    "offline",
+				SessionUptime: "00h 00m",
+				CustomID:      "Aguardando...",
+				CustomColor:   "#9e9e9e",
 			},
 			Events: models.DeviceEvents{LastPowerOn: time.Now()},
 		},
@@ -39,7 +43,22 @@ func NewMonitor(serial string, store *db.Store) *Monitor {
 
 	go m.startHIDScanner()
 	go m.batteryLogger()
+	go m.uptimeUpdater()
 	return m
+}
+
+func (m *Monitor) uptimeUpdater() {
+	ticker := time.NewTicker(30 * time.Second)
+	for range ticker.C {
+		m.mu.Lock()
+		if m.currentState.State.Connection == "online" {
+			duration := time.Since(m.currentState.Events.LastPowerOn)
+			hours := int(duration.Hours())
+			minutes := int(duration.Minutes()) % 60
+			m.currentState.State.SessionUptime = fmt.Sprintf("%02dh %02dm", hours, minutes)
+		}
+		m.mu.Unlock()
+	}
 }
 
 func (m *Monitor) setConnectionStatus(status string, deviceName string, serial string) {
@@ -51,9 +70,16 @@ func (m *Monitor) setConnectionStatus(status string, deviceName string, serial s
 		if status == "online" {
 			m.currentState.Device = deviceName
 			m.currentState.Serial = serial
+			m.currentState.Events.LastPowerOn = time.Now()
+			// Simulação de busca de identidade
+			m.currentState.State.CustomID = "Operador 01"
+			m.currentState.State.CustomColor = "#2196F3"
 			beeep.Notify("ACC Jabra", "Headset Conectado: "+deviceName, "")
 		} else {
-			beeep.Alert("ACC Jabra: ALERTA", "Dongle Removido ou Headset Desconectado!", "")
+			m.currentState.State.SessionUptime = "00h 00m"
+			m.currentState.State.CustomID = "Desconectado"
+			m.currentState.State.CustomColor = "#9e9e9e"
+			beeep.Alert("ACC Jabra: ALERTA", "Dongle Removido!", "")
 		}
 		m.store.LogEvent("connection_change", "Status: "+status)
 	}
@@ -63,7 +89,6 @@ func (m *Monitor) startHIDScanner() {
 	for {
 		devices := hid.Enumerate(JabraVID, 0)
 		if len(devices) > 0 {
-			// Tenta capturar Serial e Nome real
 			info := devices[0]
 			serial := info.Serial
 			if serial == "" { serial = "USB-HID-DEVICE" }
@@ -80,7 +105,7 @@ func (m *Monitor) startHIDScanner() {
 		} else {
 			m.setConnectionStatus("offline", "", "")
 		}
-		time.Sleep(2 * time.Second) // Scanner mais rápido para detecção de dongle
+		time.Sleep(2 * time.Second)
 	}
 }
 
@@ -97,7 +122,6 @@ func (m *Monitor) processHIDData(data []byte) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Detecção de Botões (Engage 55)
 	if data[0] == 0x01 && data[1] == 0x02 {
 		m.currentState.Events.LastButtonPressed = "mute_toggle"
 		m.currentState.State.IsMuted = !m.currentState.State.IsMuted
@@ -115,9 +139,6 @@ func (m *Monitor) batteryLogger() {
 
 		if status == "online" {
 			m.store.LogBattery(level, "periodic_check")
-			if level < 15 && level > 0 {
-				beeep.Notify("ACC Jabra: Bateria Baixa", "Carga atual: ", "")
-			}
 		}
 	}
 }

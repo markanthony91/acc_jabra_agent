@@ -9,11 +9,14 @@ type BatteryInfo struct {
 }
 
 type DeviceState struct {
-	IsInCall   bool        `json:"is_in_call"`
-	IsMuted    bool        `json:"is_muted"`
-	Volume     int         `json:"volume"`
-	Battery    BatteryInfo `json:"battery"`
-	Connection string      `json:"connection"` // stable, weak, disconnected
+	IsInCall      bool        `json:"is_in_call"`
+	IsMuted       bool        `json:"is_muted"`
+	Volume        int         `json:"volume"`
+	Battery       BatteryInfo `json:"battery"`
+	Connection    string      `json:"connection"`
+	SessionUptime string      `json:"session_uptime"` // Ex: "02h 15m"
+	CustomID      string      `json:"custom_id"`      // Nome do operador
+	CustomColor   string      `json:"custom_color"`   // Cor de identificação
 }
 
 type DeviceEvents struct {

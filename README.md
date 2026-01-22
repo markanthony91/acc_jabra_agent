@@ -5,6 +5,8 @@ Agente de telemetria de hardware escrito em **Go** para monitoramento avançado 
 ## 🚀 Funcionalidades
 
 - **Monitoramento em Tempo Real:** Status de chamada, mudo e volume.
+- **Session Tracking:** Cronômetro de Uptime (tempo logado) por sessão.
+- **Identidade Visual:** Suporte a Custom ID (Operador) e Cor de identificação.
 - **Telemetria de Bateria:** Nível atual e status de carregamento.
 - **Predictive Analytics:** Cálculo estimado de minutos restantes de conversação.
 - **Event Tracking:** Captura de eventos de botões físicos via USB HID.
