@@ -56,13 +56,21 @@ Agente de telemetria de hardware escrito em **Go** para monitoramento avançado 
 
 ### Windows 11 (Recomendado)
 
-1. **Baixe o release** ou compile:
+Para compilar nativamente no Windows, você precisa do compilador GCC instalado (TDM-GCC é recomendado para Go).
+
+1. **Instale o Compilador (TDM-GCC):**
+   *   **Download Direto:** [jmeubank.github.io/tdm-gcc/download](https://jmeubank.github.io/tdm-gcc/download/) (Escolha `tdm64-gcc-...exe`)
+   *   **Chocolatey:** `choco install mingw`
+   *   **Scoop:** `scoop install gcc`
+   *   *Dica:* Marque "Add to PATH" durante a instalação.
+
+2. **Baixe o release** ou compile:
    ```powershell
-   # Requer MinGW-w64 para compilar
-   make build-windows
+   # Compile nativamente (PowerShell)
+   go build -ldflags="-H windowsgui" -o acc_jabra_agent.exe cmd/agent/main.go
    ```
 
-2. **Estrutura necessária:**
+3. **Estrutura necessária:**
    ```
    acc_jabra_agent/
    ├── acc_jabra_agent.exe
@@ -75,7 +83,7 @@ Agente de telemetria de hardware escrito em **Go** para monitoramento avançado 
        └── index.html
    ```
 
-3. **Execute:** Duplo-clique em `acc_jabra_agent.exe`
+4. **Execute:** Duplo-clique em `acc_jabra_agent.exe`
 
 ### Linux (Desenvolvimento)
 
