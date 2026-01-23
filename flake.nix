@@ -33,6 +33,7 @@
 
           # Build tools
           gcc
+          pkgsCross.mingwW64.buildPackages.gcc
         ];
 
         # Variáveis necessárias para GTK/WebKit

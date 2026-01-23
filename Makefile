@@ -22,8 +22,9 @@ build-linux:
 # Build para Windows AMD64 (requer MinGW-w64 para CGO)
 # -H windowsgui remove console window no Windows
 build-windows:
-	CGO_ENABLED=1 \
+	CGO_CFLAGS="" CGO_LDFLAGS="" CGO_ENABLED=1 \
 	CC=x86_64-w64-mingw32-gcc \
+	CXX=x86_64-w64-mingw32-g++ \
 	GOOS=windows \
 	GOARCH=amd64 \
 	go build -ldflags="-H windowsgui" -o $(BINARY_NAME).exe cmd/agent/main.go
@@ -61,7 +62,7 @@ setup:
 # Copia DLLs necessárias para o diretório de build (Windows)
 prepare-windows-dist:
 	mkdir -p dist/windows
-	cp $(BINARY_NAME).exe dist/windows/
+	-cp $(BINARY_NAME).exe dist/windows/
 	cp lib/libjabra.dll dist/windows/
 	cp -r config dist/windows/
 	cp -r public dist/windows/
