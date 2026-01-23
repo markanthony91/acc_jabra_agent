@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/aiknow/acc_jabra_agent/internal/db"
@@ -12,7 +13,8 @@ import (
 
 func TestEndpoints(t *testing.T) {
 	// Setup
-	store, _ := db.NewStore()
+	store, _ := db.NewStore("./jabra_test_api.db")
+	defer os.Remove("./jabra_test_api.db")
 	monitor := jabra.NewMonitor("TEST-SERIAL", store)
 	server := NewServer(monitor, store)
 

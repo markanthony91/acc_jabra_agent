@@ -48,10 +48,22 @@
           for pc in ${pkgs.webkitgtk_4_1.dev}/lib/pkgconfig/*.pc; do
             base=$(basename "$pc")
             cp "$pc" ".pkgconfig/$base"
-            # Cria versão 4.0 se for 4.1
+            # Cria versão 4.0 se for 4.1, mas mantendo linkagem com 4.1
             newname=$(echo "$base" | sed 's/-4\.1/-4.0/g')
             if [ "$newname" != "$base" ]; then
-              sed 's/4\.1/4.0/g' "$pc" > ".pkgconfig/$newname"
+              # Preserva as 5 primeiras linhas (definições de caminhos) e altera o resto
+              head -n 5 "$pc" > ".pkgconfig/$newname"
+              tail -n +6 "$pc" | sed -e "s/Name: WebKit2GTK/Name: WebKitGTK/g" \
+                  -e "s/webkit2gtk-4\.1/webkit2gtk-4.0/g" \
+                  -e "s/javascriptcoregtk-4\.1/javascriptcoregtk-4.0/g" \
+                  -e "s/webkitgtk-4\.1/webkitgtk-4.1/g" \
+                  >> ".pkgconfig/$newname"
+              
+              # Agora corrige especificamente as flags de Linkagem e Cflags para apontarem para 4.1
+              sed -i -e "s/-lwebkit2gtk-4.0/-lwebkit2gtk-4.1/g" \
+                     -e "s/-ljavascriptcoregtk-4.0/-ljavascriptcoregtk-4.1/g" \
+                     -e "s/-I\''${includedir}\/webkitgtk-4.0/-I\''${includedir}\/webkitgtk-4.1/g" \
+                     ".pkgconfig/$newname"
             fi
           done
 
@@ -61,6 +73,8 @@
           fi
 
           export PKG_CONFIG_PATH="$(pwd)/.pkgconfig:$PKG_CONFIG_PATH"
+          export PKG_CONFIG_PATH_FOR_TARGET="$(pwd)/.pkgconfig:$PKG_CONFIG_PATH_FOR_TARGET"
+          export LD_LIBRARY_PATH="${pkgs.webkitgtk_4_1}/lib:${pkgs.gtk3}/lib:${pkgs.glib}/lib:$LD_LIBRARY_PATH"
           export CGO_ENABLED=1
           export CGO_CFLAGS="-I${pkgs.webkitgtk_4_1.dev}/include/webkitgtk-4.1"
           export CGO_LDFLAGS="-L${pkgs.webkitgtk_4_1}/lib -lwebkit2gtk-4.1"

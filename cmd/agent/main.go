@@ -50,7 +50,8 @@ func main() {
 
 	// 1. Inicializa Persistência (SQLite)
 	var err error
-	app.Store, err = db.NewStore()
+	dbPath := filepath.Join(".", "internal", "db", "data", "jabra_telemetry.db")
+	app.Store, err = db.NewStore(dbPath)
 	if err != nil {
 		log.Fatalf("[ACC-Jabra] Erro ao iniciar banco: %v", err)
 	}

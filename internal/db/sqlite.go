@@ -13,13 +13,12 @@ type Store struct {
 	db *sql.DB
 }
 
-func NewStore() (*Store, error) {
-	dbDir := "./data"
+func NewStore(dbPath string) (*Store, error) {
+	dbDir := filepath.Dir(dbPath)
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		os.MkdirAll(dbDir, 0755)
 	}
 
-	dbPath := filepath.Join(dbDir, "jabra_telemetry.db")
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, err
@@ -64,7 +63,7 @@ func (s *Store) GetSetting(key, defaultValue string) string {
 	return value
 }
 
-func (s *Store) SaveSetting(key, value string) error {
+func (s *Store) SetSetting(key, value string) error {
 	_, err := s.db.Exec("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", key, value)
 	return err
 }

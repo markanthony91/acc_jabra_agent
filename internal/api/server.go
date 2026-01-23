@@ -49,7 +49,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		for k, v := range cfg {
-			s.store.SaveSetting(k, v)
+			s.store.SetSetting(k, v)
 		}
 		w.WriteHeader(http.StatusOK)
 		return

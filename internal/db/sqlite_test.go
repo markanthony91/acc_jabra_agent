@@ -8,9 +8,10 @@ import (
 func TestSQLiteStore(t *testing.T) {
 	// Setup: Usar um banco temporário para testes
 	testDB := "./data/test_jabra.db"
+	_ = os.MkdirAll("./data", 0755)
 	defer os.Remove(testDB)
 
-	store, err := NewStore() // Note: NewStore precisaria ser modificado para aceitar path, ou usamos o default e limpamos
+	store, err := NewStore(testDB)
 	if err != nil {
 		t.Fatalf("Erro ao criar store: %v", err)
 	}
